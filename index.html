@@ -3,78 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Простой файловый каталог: фото, видео, музыка и документы.">
-  <title>ФайлБокс — файловый каталог</title>
-  <style>
-    :root{color-scheme:dark;--bg:#0b1020;--panel:#151d33;--muted:#9aa8c7;--accent:#7c9cff;--line:#293654}
-    *{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at top,#1b2a50 0,var(--bg) 55%);color:#f4f6ff;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    main{width:min(960px,calc(100% - 32px));margin:56px auto}
-    header{text-align:center;margin-bottom:28px} h1{font-size:clamp(2rem,6vw,3.3rem);margin:0 0 8px;letter-spacing:-.04em}
-    header p,.hint{color:var(--muted)} .panel{background:rgba(21,29,51,.94);border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 18px 60px #0005}
-    .drop{border:2px dashed #52658f;border-radius:18px;padding:32px 18px;text-align:center;background:#10182c;transition:.2s}
-    .drop.drag{border-color:var(--accent);background:#192747}.drop strong{display:block;font-size:1.15rem;margin-bottom:6px}
-    button,.file-button{border:0;border-radius:12px;background:var(--accent);color:#081127;font-weight:700;padding:11px 17px;cursor:pointer;display:inline-block}
-    button:hover,.file-button:hover{filter:brightness(1.1)} input[type=file]{position:absolute;left:-9999px}
-    .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:24px 0 12px}
-    .toolbar input{background:#0d1528;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:white;min-width:220px}
-    .list{display:grid;gap:10px}.item{display:flex;align-items:center;gap:14px;padding:13px;background:#10182c;border:1px solid var(--line);border-radius:14px;min-width:0}
-    .ico{width:44px;height:44px;display:grid;place-items:center;background:#202d4b;border-radius:12px;font-size:1.35rem;flex:none}
-    .meta{min-width:0;flex:1}.name{font-weight:650;overflow-wrap:anywhere}.size{font-size:.85rem;color:var(--muted)}
-    .download{color:#c9d6ff;text-decoration:none;border:1px solid #52658f;border-radius:10px;padding:8px 12px;white-space:nowrap}.download:hover{background:#26375d}
-    .empty{text-align:center;color:var(--muted);padding:24px}.notice{margin-top:18px;padding:14px;border-radius:12px;background:#2b2416;color:#f4d99b;font-size:.9rem}
-    footer{text-align:center;color:var(--muted);font-size:.85rem;margin:22px 0}
-    @media(max-width:560px){main{margin:28px auto}.panel{padding:16px}.item{gap:9px}.download{padding:7px 9px}.ico{width:38px;height:38px}}
-  </style>
+  <meta name="description" content="ФайлБокс — загружай файлы и делись ссылками на скачивание.">
+  <title>ФайлБокс — обмен файлами</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
 </head>
 <body>
-<main>
-  <header>
-    <h1>ФайлБокс</h1>
-    <p>Загружай файлы, просматривай список и скачивай нужное.</p>
-  </header>
-  <section class="panel">
-    <div class="drop" id="drop">
-      <strong>Перетащи файлы сюда</strong>
-      <div class="hint">Фото, видео, музыка, архивы и документы</div>
-      <p><label class="file-button" for="picker">Выбрать файлы</label></p>
-      <input id="picker" type="file" multiple>
-    </div>
-    <div class="toolbar">
-      <strong>Файлы <span id="count">(0)</span></strong>
-      <input id="search" type="search" placeholder="Поиск по названию…" aria-label="Поиск по названию">
-    </div>
-    <div class="list" id="list"><div class="empty">Пока файлов нет. Выбери файлы выше.</div></div>
-    <div class="notice"><strong>Важно:</strong> эта версия работает прямо в браузере. Выбранные файлы доступны только в этой вкладке и не загружаются на сервер. Чтобы файлы могли скачивать другие люди по общей ссылке, подключи облачное хранилище или сервер.</div>
-  </section>
-  <footer>ФайлБокс · простой файловый каталог</footer>
-</main>
-<script>
-  const picker=document.querySelector('#picker'),drop=document.querySelector('#drop'),list=document.querySelector('#list'),count=document.querySelector('#count'),search=document.querySelector('#search');
-  let files=[];
-  const size=n=>n<1024?n+' Б':n<1048576?(n/1024).toFixed(1)+' КБ':n<1073741824?(n/1048576).toFixed(1)+' МБ':(n/1073741824).toFixed(2)+' ГБ';
-  const icon=f=>f.type.startsWith('image/')?'🖼️':f.type.startsWith('video/')?'🎬':f.type.startsWith('audio/')?'🎵':f.type.includes('pdf')?'📕':f.type.includes('zip')||f.type.includes('compressed')?'🗜️':'📄';
-  function add(selected){for(const f of selected){if(!files.some(x=>x.file===f))files.push({file:f,url:URL.createObjectURL(f)});}render();}
-  function render(){
-    const q=search.value.toLowerCase(),shown=files.filter(x=>x.file.name.toLowerCase().includes(q));
-    count.textContent='('+files.length+')';
-    list.replaceChildren();
-    if(!shown.length){const e=document.createElement('div');e.className='empty';e.textContent=files.length?'Ничего не найдено.':'Пока файлов нет. Выбери файлы выше.';list.append(e);return;}
-    shown.forEach(({file,url})=>{
-      const row=document.createElement('div');row.className='item';
-      const ico=document.createElement('div');ico.className='ico';ico.textContent=icon(file);
-      const meta=document.createElement('div');meta.className='meta';
-      const name=document.createElement('div');name.className='name';name.textContent=file.name;
-      const detail=document.createElement('div');detail.className='size';detail.textContent=size(file.size);
-      const a=document.createElement('a');a.className='download';a.href=url;a.download=file.name;a.textContent='Скачать';
-      meta.append(name,detail);row.append(ico,meta,a);list.append(row);
+  <main class="shell">
+    <header class="top">
+      <a class="brand" href="./"><span class="brand-mark">F</span><span>ФайлБокс</span></a>
+      <span class="pill"><i></i> Облачное хранилище</span>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">ПРОСТОЙ ОБМЕН ФАЙЛАМИ</p>
+      <h1>Твои файлы.<br><span>Твои ссылки.</span></h1>
+      <p class="lead">Загружай фото, видео, музыку и документы — делись прямой ссылкой на скачивание.</p>
+    </section>
+    <section class="upload-card">
+      <div id="dropzone" class="dropzone">
+        <div class="upload-icon">↑</div>
+        <h2>Перетащи файлы сюда</h2>
+        <p>или выбери их на устройстве</p>
+        <label class="button primary" for="fileInput">Выбрать файлы</label>
+        <input id="fileInput" type="file" multiple>
+        <p class="micro">Загрузка начнётся после выбора. Не закрывай страницу до завершения.</p>
+      </div>
+      <div id="uploadStatus" class="status" aria-live="polite"></div>
+    </section>
+    <section class="files-section">
+      <div class="section-heading">
+        <div><p class="eyebrow">ОБЩАЯ БИБЛИОТЕКА</p><h2>Файлы сообщества</h2></div>
+        <input id="searchInput" class="search" type="search" placeholder="Найти файл…" aria-label="Найти файл">
+      </div>
+      <div id="fileList" class="file-list"><div class="empty">Загружаем список файлов…</div></div>
+    </section>
+    <footer>ФайлБокс · Файлы доступны всем, у кого есть ссылка</footer>
+  </main>
+  <dialog id="configDialog">
+    <form method="dialog" class="dialog-inner">
+      <button class="close" aria-label="Закрыть">×</button>
+      <p class="eyebrow">ПЕРВЫЙ ЗАПУСК</p>
+      <h2>Подключи хранилище</h2>
+      <p>Вставь URL проекта Supabase и публичный ключ <code>anon</code>/<code>publishable</code>. Эти данные предназначены для браузера. Никогда не вставляй сюда service_role или secret key.</p>
+      <label>Project URL<input id="projectUrl" type="url" placeholder="https://xxxx.supabase.co" required></label>
+      <label>Publishable / anon key<textarea id="anonKey" rows="3" placeholder="eyJ... или sb_publishable_..." required></textarea></label>
+      <button id="saveConfig" class="button primary" value="save">Сохранить настройки</button>
+    </form>
+  </dialog>
+  <script>
+    // Dialog setup is deliberately inline so the page still displays if app.js cannot load.
+    document.addEventListener('DOMContentLoaded', () => {
+      const d=document.getElementById('configDialog');
+      document.getElementById('openConfig')?.addEventListener('click',()=>d.showModal());
     });
-  }
-  picker.addEventListener('change',e=>add(e.target.files));
-  search.addEventListener('input',render);
-  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');}));
-  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');}));
-  drop.addEventListener('drop',e=>add(e.dataTransfer.files));
-  window.addEventListener('beforeunload',()=>files.forEach(x=>URL.revokeObjectURL(x.url)));
-</script>
+  </script>
 </body>
 </html>
